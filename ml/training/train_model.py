@@ -17,7 +17,7 @@ print("Dataset loaded successfully!")
 le_weather = LabelEncoder()
 le_traffic = LabelEncoder()
 
-df["weather"] = le_weather.fit_transform(df["weather"])
+df["weather"] = le_weather.fit_transform(df["weather"]) 
 df["traffic"] = le_traffic.fit_transform(df["traffic"])
 
 

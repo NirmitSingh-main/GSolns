@@ -1,12 +1,15 @@
 import pickle
 import pandas as pd
 
-
-# Load model + encoders (once at startup)
+# -----------------------------
+# Load model + encoders
+# -----------------------------
 with open("ml/models/model.pkl", "rb") as f:
     model, le_weather, le_traffic = pickle.load(f)
 
-
+# -----------------------------
+# Risk Level Helper
+# -----------------------------
 def get_risk_level(score):
     if score < 30:
         return "Low 🟢"
@@ -15,14 +18,26 @@ def get_risk_level(score):
     else:
         return "High 🔴"
 
+# -----------------------------
+# Safe Encoding
+# -----------------------------
+def safe_encode(encoder, value):
+    value = value.lower()
+    if value not in encoder.classes_:
+        return 0
+    return encoder.transform([value])[0]
 
+# -----------------------------
+# Prediction Function
+# -----------------------------
 def predict_delay(weather, traffic, temp, hour):
     try:
-        # 🔹 Encode categorical inputs
-        weather_encoded = le_weather.transform([weather])[0]
-        traffic_encoded = le_traffic.transform([traffic])[0]
+        weather = weather.lower()
+        traffic = traffic.lower()
 
-        # 🔹 Create DataFrame (avoids sklearn warning)
+        weather_encoded = safe_encode(le_weather, weather)
+        traffic_encoded = safe_encode(le_traffic, traffic)
+
         X = pd.DataFrame([{
             "weather": weather_encoded,
             "traffic": traffic_encoded,
@@ -30,11 +45,26 @@ def predict_delay(weather, traffic, temp, hour):
             "hour": hour
         }])
 
-        # 🔹 Predict probability
         delay_prob = model.predict_proba(X)[0][1]
 
-        # 🔹 Convert to usable outputs
-        delay_prob = float(round(delay_prob, 2))
+        # 🔥 Controlled adjustment
+        adjustment = 0
+
+        if traffic == "low":
+            adjustment -= 0.05
+        elif traffic == "high":
+            adjustment += 0.1
+
+        if weather in ["rain", "snow", "thunderstorm", "drizzle"]:
+            adjustment += 0.1
+
+        
+        #weighted combination
+        adjusted_prob = delay_prob + adjustment
+        delay_prob = (0.8 * delay_prob) + (0.2 * (delay_prob + adjusted_prob))
+        #clamp safely
+        delay_prob = max(0.05, min(0.95, delay_prob))
+
         risk_score = int(delay_prob * 100)
         risk_level = get_risk_level(risk_score)
 
@@ -46,5 +76,8 @@ def predict_delay(weather, traffic, temp, hour):
 
     except Exception as e:
         return {
+            "delay_probability": 0.5,
+            "risk_score": 50,
+            "risk_level": "Unknown ⚠️",
             "error": str(e)
         }

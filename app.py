@@ -1,21 +1,118 @@
 import streamlit as st
+import matplotlib.pyplot as plt
+import random
+from utils.weather import get_weather
+from ml.inference.predict import predict_delay
+import datetime
 
-st.title("Travel Risk Calculator")
+st.set_page_config(page_title="Supply Chain Risk Dashboard", layout="centered")
 
-# Input fields
-source = st.text_input("Source")
-destination = st.text_input("Destination")
+# -------------------------------
+# 🎯 Title
+# -------------------------------
+st.title("🚀 Real-Time Risk Dashboard")
+st.markdown("Predict shipment delay risk using **weather + traffic conditions**")
 
-# Button to calculate risk
-if st.button("Calculate Risk"):
-	# Placeholder for risk calculation logic
-	# Replace with actual function call
-	risk_score = 0.75  # Example static value
-	factors = ["Weather conditions", "Road quality", "Crime rate"]
+st.divider()
 
-	st.subheader("Risk Score")
-	st.write(f"{risk_score}")
+# -------------------------------
+# 🧾 Input Section
+# -------------------------------
+st.subheader("📍 Shipment Details")
 
-	st.subheader("Factors Affecting Risk")
-	for factor in factors:
-		st.write(f"- {factor}")
+col1, col2 = st.columns(2)
+
+with col1:
+    source = st.text_input("Source City", "Delhi")
+
+with col2:
+    destination = st.text_input("Destination City", "Mumbai")
+
+traffic = st.selectbox("🚗 Traffic Level", ["low", "medium", "high"])
+
+st.divider()
+
+# -------------------------------
+# 🔘 Button Action
+# -------------------------------
+if st.button("🔍 Analyze Risk"):
+
+    with st.spinner("Fetching data & analyzing risk..."):
+
+        # 🌦️ Weather API
+        weather, temp = get_weather(destination)
+
+        # ⏰ Current hour
+        hour = datetime.datetime.now().hour
+
+        # 🤖 ML Prediction
+        result = predict_delay(weather.lower(), traffic, temp, hour)
+        st.write("🧠 Model Base Probability:", round(result["delay_probability"], 2))
+
+    st.divider()
+
+    # -------------------------------
+    # 📊 Risk Analysis
+    # -------------------------------
+    st.subheader("📊 Risk Analysis")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("🌦️ Weather", weather)
+    col2.metric("🌡️ Temp (°C)", round(temp, 2))
+    col3.metric("⚠️ Risk Score", result["risk_score"])
+
+    # 🔥 Progress Bar
+    st.progress(result["risk_score"] / 100)
+
+    # 🚦 Risk Level Display
+    if result["risk_score"] < 30:
+        st.success("🟢 Low Risk - Shipment likely on time")
+    elif result["risk_score"] < 70:
+        st.warning("🟡 Medium Risk - Possible minor delay")
+    else:
+        st.error("🔴 High Risk - Delay expected!")
+
+    # -------------------------------
+    # 📌 Contributing Factors
+    # -------------------------------
+    st.subheader("📌 Contributing Factors")
+
+    st.write(f"- 🌦️ Weather condition: **{weather}**")
+    st.write(f"- 🚗 Traffic level: **{traffic}**")
+    st.write(f"- ⏰ Time of day: **{hour}:00 hrs**")
+
+    # -------------------------------
+    # 🚨 Smart Alert
+    # -------------------------------
+    if result["risk_score"] > 70:
+        st.error("⚠️ Alert: Shipment may be delayed by ~2–3 hours")
+
+    # -------------------------------
+    # 🧭 Decision Layer
+    # -------------------------------
+    st.subheader("🧭 Recommended Action")
+
+    if result["risk_score"] < 30:
+        st.success("✅ Safe to proceed with shipment")
+    elif result["risk_score"] < 70:
+        st.warning("⚠️ Moderate risk — monitor conditions or add buffer time")
+    else:
+        st.error("🚨 High risk — consider delaying or rerouting shipment")
+
+    # -------------------------------
+    # 📈 Risk Trend Graph
+    # -------------------------------
+    st.subheader("📈 Risk Trend")
+
+    # Simulated past values
+    past_risks = [random.randint(20, 60) for _ in range(3)]
+    risk_history = past_risks + [result["risk_score"]]
+
+    fig = plt.figure()
+    plt.plot(risk_history, marker='o')
+    plt.title("Risk Trend Over Time")
+    plt.xlabel("Time Step")
+    plt.ylabel("Risk Score")
+
+    st.pyplot(fig)
