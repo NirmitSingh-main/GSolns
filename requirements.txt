@@ -1,10 +1,31 @@
+# ============================================================
+# LogiRisk AI — Python Backend Dependencies (requirements.txt)
+# ============================================================
+
+# --- Web Framework ---
 fastapi
-uvicorn
+uvicorn[standard]
+
+# --- Data Validation ---
 pydantic
+
+# --- Data Processing & ML ---
 pandas
 numpy
 scikit-learn
+
+# --- Machine Learning Utilities ---
+joblib
+
+# --- HTTP / API Calls ---
 requests
+
+# --- Charting (used in analytics utilities) ---
 plotly
 matplotlib
+
+# --- Environment Variables ---
 python-dotenv
+
+# --- SQLite (built-in, no install needed, listed for clarity) ---
+# sqlite3
