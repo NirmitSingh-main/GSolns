@@ -1,152 +1,167 @@
-# 🚀 Real-Time Risk Scoring Dashboard for Supply Chain
+# 🚀 LogiRisk AI — Intelligent Supply Chain Risk Platform
+
+> **A full-stack Decision Intelligence System** combining FastAPI, React/Vite, Machine Learning, and live geospatial APIs to optimize logistics routes, simulate environmental risks, and monitor an active shipment fleet in real time.
+
+---
 
 ## 📌 Overview
 
-This project is a real-time risk prediction system designed to improve supply chain decision-making. It combines machine learning, live weather data, and route analytics to estimate delivery risks and provide actionable insights.
+LogiRisk AI is a production-grade supply chain analytics platform originally built as a Streamlit prototype and fully migrated to a modern **FastAPI + React (Vite)** architecture. The system ingests live weather conditions, estimates traffic intensity from system time, evaluates multiple route options through a trained ML model, and surfaces explainable risk scores to decision-makers in an interactive, auto-refreshing dashboard.
 
-The system continuously evaluates shipment conditions and outputs a risk score (0–100) along with recommendations to help prevent delays.
+---
 
 ## 🎯 Key Features
 
-- **🔴 Dynamic Risk Scoring**: Calculates real-time risk scores based on environmental and operational factors.
-- **🌦️ Weather Integration (API-based)**: Fetches live weather conditions (temperature, conditions, coordinates).
-- **🗺️ Route Intelligence**: Estimates distance and travel time using routing APIs.
-- **🧠 Machine Learning Prediction**: Uses a trained Random Forest model to predict delay probability.
-- **📊 Explainable Insights**: Shows contributing factors such as weather, traffic, and time.
-- **🚨 Smart Alerts & Recommendations**: Provides decision support:
-  - Low Risk → Proceed
-  - Medium Risk → Monitor
-  - High Risk → Delay / Reroute
-- **📈 Risk Trend Visualization**: Displays simulated trends to understand risk evolution.
-- **📍 Multi-Input Dashboard (Streamlit UI)**: Simple interface to test different routes and scenarios.
+| Feature | Details |
+|---|---|
+| **🗺️ Multi-Route Optimization** | Fetches 3 alternative routes via OpenRouteService, scores each with ML, and selects the optimal path |
+| **🌦️ Live Weather Integration** | OpenWeather API provides real-time conditions per city (rain, haze, temperature) |
+| **🚗 Automated Traffic Estimation** | System clock auto-infers peak/off-peak traffic — no manual dropdown |
+| **🧠 ML Risk Scoring** | Pre-trained model scores each route on weather, traffic, temperature, and time of day |
+| **🔍 Explainable AI (XAI)** | Every route displays human-readable "Intelligence Factors" explaining the risk score |
+| **⚡ Hybrid Adaptive Learning** | Backend pseudo-learning adjusts risk weights based on detected traffic trends |
+| **🗄️ Live SQLite Database** | Every optimization is logged; auto-purges at 300 records |
+| **📊 Real-Time Analytics** | K-Means clustering + trend analysis on live DB data, auto-refreshing every 10s |
+| **🔥 Geospatial Heatmap** | `leaflet.heat` renders India-wide ML risk density across 12 logistics hubs |
+| **🚢 Fleet Portfolio Dashboard** | Live ML-scored shipment inventory with weather icons and delay reason per row |
+
+---
 
 ## 🧠 System Workflow
 
 ```
-User Input (Source, Destination, Traffic)
-            ↓
-Weather API → (Weather, Temp, Coordinates)
-            ↓
-Route API → (Distance, Duration)
-            ↓
-ML Model → (Delay Probability)
-            ↓
-Risk Score (0–100) + Risk Level
-            ↓
-Dashboard Visualization + Recommendations
+System Clock → Traffic Estimate (Auto)
+User Input (Source, Destination) → OpenWeather API (Live Weather + Temp)
+                                 → OpenRouteService API (3 Alternative Routes)
+                                         ↓
+                          ML Model (risk score per route)
+                                         ↓
+                    Risk Appetite (λ) → Total Score = Duration + (λ × Risk)
+                                         ↓
+              Best Route Selected → Logged to SQLite DB → UI Updated
 ```
+
+---
 
 ## 🧰 Tech Stack
 
-**Backend & ML**
-- Python
-- Pandas, NumPy
-- Scikit-learn (Random Forest)
+### Backend
+| Tool | Role |
+|---|---|
+| `FastAPI` | REST API framework |
+| `Uvicorn` | ASGI server |
+| `scikit-learn` | ML inference + K-Means clustering |
+| `SQLite` | Live query database (logirisk.db) |
+| `OpenWeather API` | Real-time weather per city |
+| `OpenRouteService API` | Multi-route geospatial data |
 
-**APIs**
-- OpenWeather API
-- OpenRouteService API
+### Frontend
+| Tool | Role |
+|---|---|
+| `React + Vite` | UI framework + dev server |
+| `React Router` | 4-page dashboard routing |
+| `React-Leaflet + Leaflet` | Interactive geospatial maps |
+| `leaflet.heat` | Risk density heatmap overlay |
+| `Recharts` | Analytics & clustering charts |
+| `Axios` | API communication |
+| `Lucide React` | Icon library |
 
-**Frontend (Current)**
-- Streamlit
-
-**Visualization**
-- Matplotlib
-- PyDeck / Streamlit Maps
-
-## 📊 Machine Learning Details
-
-**Model**: Random Forest Classifier
-
-**Features**:
-- Weather condition
-- Traffic level
-- Temperature
-- Time of day
-
-**Output**:
-- Delay probability
-- Risk score (0–100)
-- Risk classification
+---
 
 ## 📁 Project Structure
 
 ```
-gslns/
+GSolns/
 │
-├── app.py                  # Streamlit dashboard
-├── requirements.txt
+├── main.py                     # FastAPI backend — all endpoints
+├── requirements.txt            # Python dependencies
+├── SETUP.md                    # Full setup guide
+├── LogiRisk_Architecture_Overview.txt  # Technical architecture doc
+├── logirisk.db                 # SQLite live database (auto-created)
+├── .env                        # API keys (NOT committed)
 │
 ├── utils/
-│   ├── weather.py          # Weather API logic
-│   ├── route.py            # Routing API logic
+│   ├── weather.py              # OpenWeather API with 5-min cache
+│   └── route.py                # OpenRouteService with fallback routes
 │
 ├── ml/
 │   ├── inference/
-│   │   └── predict.py      # Model inference
+│   │   └── predict.py          # ML model inference engine
 │   ├── training/
-│   │   └── train_model.py
+│   │   └── train_model.py      # Model training script
 │   └── models/
-│       └── model.pkl
+│       └── model.pkl           # Trained model binary
 │
 ├── data/
-│   ├── raw/
-│   └── processed/
+│   ├── raw/                    # Raw datasets
+│   └── processed/              # Processed training data
+│
+└── frontend/
+    ├── package.json            # JS dependencies
+    ├── src/
+    │   ├── App.jsx             # Router + Leaflet CSS import
+    │   ├── index.css           # Global dark/gold theme
+    │   └── pages/
+    │       ├── Portfolio.jsx   # Fleet dashboard (live DB + ML)
+    │       ├── RouteOptimization.jsx  # Map + route comparison
+    │       ├── Analytics.jsx   # Charts + clustering (auto-refresh)
+    │       └── Simulation.jsx  # Heatmap risk simulation
 ```
 
-## 🔑 API Configuration
+---
 
-This project requires API keys from two external services. Follow these steps to set them up:
+## 🔑 Environment Variables
 
-### 1. OpenWeather API
-1. Visit [OpenWeather](https://openweathermap.org/api)
-2. Sign up for a free account
-3. Generate an API key from your dashboard
-4. Copy your API key
-
-### 2. OpenRouteService API
-1. Visit [OpenRouteService](https://openrouteservice.org/)
-2. Sign up for a free account
-3. Generate an API key from your dashboard
-4. Copy your API key
-
-### 3. Create `.env` File
-Create a `.env` file in the project root directory with the following content:
+Create a `.env` file in the project root:
 
 ```env
-OPENWEATHER_API_KEY=your_openweather_api_key_here
-OPENROUTE_API_KEY=your_openroute_api_key_here
+VITE_OPENWEATHER_API_KEY=your_openweather_key_here
+VITE_OPENROUTE_API_KEY=your_openrouteservice_key_here
 ```
 
-Replace `your_openweather_api_key_here` and `your_openroute_api_key_here` with your actual API keys.
+Get free API keys from:
+- [OpenWeather](https://openweathermap.org/api) — free tier, 60 calls/min
+- [OpenRouteService](https://openrouteservice.org/) — free tier, 2000 calls/day
+
+> ⚠️ Never commit your `.env` file — it is protected by `.gitignore`
+
+---
 
 ## ⚙️ How to Run
 
-1. **Install dependencies**:
-   ```sh
-   pip install -r requirements.txt
-   ```
+### 1. Clone & setup environment
+```bash
+git clone <repo-url>
+cd GSolns
+```
 
-2. **Set up your `.env` file** with API keys (see section above)
+### 2. Backend
+```bash
+pip install -r requirements.txt
+python -m uvicorn main:app --reload
+# → API running at http://localhost:8000
+```
 
-3. **Run the Streamlit app**:
-   ```sh
-   streamlit run app.py
-   ```
+### 3. Frontend
+```bash
+cd frontend
+npm install
+npm run dev -- --force
+# → UI running at http://localhost:5173
+```
 
-4. **Open your browser** and navigate to:
-   ```
-   http://localhost:8501
-   ```
+---
 
-## 🔮 Future Enhancements
+## 📊 ML Model Details
 
-- 🌐 Full-stack migration (React + FastAPI)
-- 🗺️ Real route path visualization (polyline rendering)
-- 🔁 Multi-route comparison (fastest vs safest)
-- 📱 Mobile-friendly interface
-- 🧠 Advanced models (XGBoost / RL-based routing)
+- **Architecture**: Pre-trained classifier (trained on logistics delay dataset)
+- **Features**: Weather condition, traffic level, temperature (°C), hour of day
+- **Output**: Risk score (0–100) + classification (LOW / MEDIUM / HIGH)
+- **Explainability**: Custom `explain_risk()` generates human-readable factor list per route
+- **Adaptive Weighting**: Backend dynamically increases traffic penalty during consecutive high-traffic windows
+
+---
 
 ## 🏁 Conclusion
 
-This project demonstrates how AI + real-time data can be combined to build intelligent systems for supply chain optimization. It provides a practical approach to predicting delays, assessing risks, and improving logistics efficiency.
+LogiRisk AI demonstrates how real-time APIs, persistent databases, and ML explainability can be fused into a production-grade logistics intelligence platform — going well beyond a static prototype into a true decision-support system.
